@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  text-embedding-test:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        PORT: "${PORT}"
+    container_name: test-embeddings
+    image: test-embeddings
+    environment:
+      PORT: "${PORT}"
+    volumes:
+      - .:/app
+    ports:
+      - "${PORT}:${PORT}"
+    command: python src/app.py
