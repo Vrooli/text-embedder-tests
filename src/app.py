@@ -5,6 +5,8 @@ import json
 import logging
 
 EMBEDDING_API_URL = 'http://localhost:3369' #'http://embedtext.com'
+# Maximum number of sentences that can be processed at once. Should match the value in the embedding API.
+MAX_SENTENCES = 100
 
 # Configure logging
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -13,20 +15,24 @@ logger = logging.getLogger(__name__)
 # Uses the embedding API to get the embeddings of the instruction and the sentences in the list
 # Returns None if there is an error
 def get_embeddings(instruction, sentences):
-    data = json.dumps({'instruction': instruction, 'sentences': sentences})
-    headers = {'Content-Type': 'application/json'}
-    logger.info(f'Getting embeddings with this data: {data}')
-    try:
-        response = requests.post(EMBEDDING_API_URL, data=data, headers=headers)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error getting embeddings: {e}")
-        return None
-    try:
-        return np.array(response.json()['embeddings'])
-    except Exception as e:
-        logger.error(f"Error converting response to numpy array: {e}")
-        return None
+    embeddings = []
+    for i in range(0, len(sentences), MAX_SENTENCES):
+        subset_sentences = sentences[i:i+MAX_SENTENCES]
+        data = json.dumps({'instruction': instruction, 'sentences': subset_sentences})
+        headers = {'Content-Type': 'application/json'}
+        logger.info(f'Getting embeddings with this data: {data}')
+        try:
+            response = requests.post(EMBEDDING_API_URL, data=data, headers=headers)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error getting embeddings: {e}")
+            return None
+        try:
+            embeddings.extend(response.json()['embeddings'])
+        except Exception as e:
+            logger.error(f"Error converting response to numpy array: {e}")
+            return None
+    return np.array(embeddings)
 
 # Gets embeddings, finds the k nearest neighbors, and prints them.
 # Used to simulate what a search result would return.
@@ -49,11 +55,10 @@ def test_embeddings(test_strings, instruction, search_strings, k=5):
         nearest_neighbors = [test_strings[index] for index in indices[i]]
         logger.info(f'Nearest neighbors for "{search_strings[i]}": {nearest_neighbors}')
 
-def main():
-    logger.info('Starting tests...')
-     # Test 1: Tags
-    instruction1 = "Represent the text for classification"
-    test_strings1 = [
+def test_1():
+    logger.info('-------- Starting Test 1 --------')
+    instruction = "Represent the text for classification"
+    test_strings = [
         "Low-Code",
         "Product Development",
         "Idea Generation",
@@ -66,44 +71,57 @@ def main():
         "Analytics",
         "Web3",
         "Decentralized Finance (DeFi)",
-        "Governacne",
+        "Governance",
         "Project Management",
         "Productivity",
         "Documentation"
     ]
-    search_strings1 = ["ai", "computer science", "business", "chicken", "entrepreneurship", "entrepreneur", "entre"]
-    test_embeddings(test_strings1, instruction1, search_strings1)
+    search_strings = ["ai", "computer science", "business", "chicken", "entrepreneurship", "entrepreneur", "entre"]
+    test_embeddings(test_strings, instruction, search_strings)
+    logger.info('-------- Test 1 Complete --------')
 
-    # Test 2: Plain strings
-    instruction2 = "Represent the text for classification"
-    test_strings2 = [
+def test_2():
+    logger.info('-------- Starting Test 2 --------')
+    instruction = "Represent the text for classification"
+    test_strings = [
         "The quick brown fox jumps over the lazy dog",
         "The fast brown fox jumps over the lazy dog",
-        # ...
         "C",
     ]
-    search_strings2 = ["fox", "pen", "dog", "the", "a"]
-    test_embeddings(test_strings2, instruction2, search_strings2)
+    search_strings = ["fox", "pen", "dog", "the", "a"]
+    test_embeddings(test_strings, instruction, search_strings)
+    logger.info('-------- Test 2 Complete --------')
 
-    # Test 3: JSON strings
-    instruction3 = "Represent the title and description for classification"
-    test_strings3 = [
+def test_3():
+    logger.info('-------- Starting Test 3 --------')
+    instruction = "Represent the title and description for classification"
+    test_strings = [
         json.dumps({
             "title": "All about penguins",
             "description": "Penguins are birds. They are black and white. When it is cold, they huddle together.",
         }),
         # ...
     ]
-    search_strings3 = ["penguins", "bake cake", "dinosaurs", "birds", "baking"]
-    test_embeddings(test_strings3, instruction3, search_strings3)
+    search_strings = ["penguins", "bake cake", "dinosaurs", "birds", "baking"]
+    test_embeddings(test_strings, instruction, search_strings)
+    logger.info('-------- Test 3 Complete --------')
 
-    # Test 4: Same string multiple times
-    instruction4 = "Represent the text for classification"
-    test_string4 = "The quick brown fox jumps over the lazy dog"
-    embeddings4 = np.array([get_embeddings(instruction4, test_string4) for _ in range(3)])
-    similarities4 = [np.dot(embeddings4[0], embeddings4[i]) for i in range(3)]
-    logger.info(f'Similarities for test 4: {similarities4}')
-    logger.info('Tests complete!')
+def test_4():
+    logger.info('-------- Starting Test 4 --------')
+    instruction = "Represent the text for classification"
+    test_string = "The quick brown fox jumps over the lazy dog"
+    embeddings = np.array([get_embeddings(instruction, test_string) for _ in range(3)])
+    similarities = [np.dot(embeddings[0], embeddings[i]) for i in range(3)]
+    logger.info(f'Similarities for test 4: {similarities}')
+    logger.info('-------- Test 4 Complete --------')
+
+def main():
+    logger.info('-------- Starting Tests --------')
+    test_1()
+    test_2()
+    test_3()
+    test_4()
+    logger.info('-------- Tests Complete --------')
 
 try:
     main()

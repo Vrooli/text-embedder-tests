@@ -6,6 +6,7 @@ services:
       dockerfile: ./Dockerfile
       args:
         PORT: "${PORT}"
+    network_mode: "host" # Only include this is calling from localhost instead of a remote API
     container_name: test-embeddings
     image: test-embeddings
     environment:
