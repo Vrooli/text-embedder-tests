@@ -1,9 +1,11 @@
+import time
 from typing import Callable, Optional
 import requests
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 import json
 import logging
+import os
 
 EMBEDDING_API_URL = 'http://localhost:3369' #'http://embedtext.com'
 # Maximum number of sentences that can be processed at once. Should match the value in the embedding API.
@@ -15,6 +17,30 @@ logger = logging.getLogger(__name__)
 
 def log_header(text: str):
     logger.info(f'-------- {text} --------')
+
+def load_file(filepath: str):
+    # Get the directory of the current script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Get the absolute path of the file
+    abs_file_path = os.path.join(script_dir, filepath)
+    try:
+        with open(abs_file_path, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        logger.error(f"The file at {abs_file_path} could not be found.")
+        return None
+    except json.JSONDecodeError:
+        logger.error(f"Could not parse the JSON file at {abs_file_path}.")
+        return None
+
+def load_object_data(filename: str):
+    return load_file(f'objects/{filename}.json')
+    
+def load_search_data(filename: str):
+    return load_file(f'searches/{filename}.json')
+    
+def load_instructions(filename: str):
+    return load_file(f'instructions/{filename}.json')
 
 # Uses the embedding API to get the embeddings of the instruction and the sentences in the list
 # Returns None if there is an error
@@ -87,7 +113,7 @@ def test_embeddings(test_strings: list, instruction: str, search_strings: list, 
 
     return scores
 
-def test_multiple_instructions(instructions: list, test_strings: list, search_strings: list, parse_fn: Optional[Callable] = None):
+def test_multiple_instructions(instructions: list, test_strings: list, search_data: list, parse_fn: Optional[Callable] = None):
     """
     This function tests multiple instructions by passing each one to test_embeddings and then sorts the instructions 
     based on the average score they received.
@@ -95,21 +121,21 @@ def test_multiple_instructions(instructions: list, test_strings: list, search_st
     Parameters:
     instructions (list): List of instructions to test.
     test_strings (list): List of strings to embed and use as the dataset for the nearest neighbors algorithm.
-    search_strings (list): List of tuples, where each tuple has a search string and the expected result.
+    search_data (list): List of tuples, where each tuple has a search string and the expected result.
     parse_fn (Callable, optional): Function to parse the search results. Useful if you're representing multiple fields in one string
     """
     instruction_scores = []
 
     for instruction in instructions:
         logger.info(f'Testing instruction: "{instruction}"')
-        scores = test_embeddings(test_strings, instruction, search_strings, parse_fn)
+        scores = test_embeddings(test_strings, instruction, search_data, parse_fn)
         if scores is not None:  # If there was no error in test_embeddings
             avg_score = sum(scores) / len(scores)
             instruction_scores.append((instruction, avg_score))
 
             # Log the average score for each search string
-            for i in range(len(search_strings)):
-                logger.debug(f"Average score for search string '{search_strings[i][0]}': {scores[i]}")
+            for i in range(len(search_data)):
+                logger.debug(f"Average score for search string '{search_data[i][0]}': {scores[i]}")
 
             # Log the overall average score for this instruction
             logger.debug(f"Average score for instruction '{instruction}': {avg_score}")
@@ -123,139 +149,27 @@ def test_multiple_instructions(instructions: list, test_strings: list, search_st
 def test_tags():
     # Test 1: Tags
     log_header("Start test: Tags")
-    result_strings = [
-        "Analytics",
-        "Artificial Intelligence (AI)",
-        "Blockchain",
-        "Compliance",
-        "Cryptocurrency",
-        "Cybersecurity",
-        "Data Science",
-        "Decentralized Finance (DeFi)",
-        "Documentation",
-        "E-Commerce",
-        "Fintech",
-        "Governance",
-        "GPT-3",
-        "Idea Generation",
-        "Internet of Things (IoT)",
-        "Low-Code",
-        "Machine Learning",
-        "Marketing",
-        "Open Source",
-        "Oracle",
-        "Product Development",
-        "Productivity",
-        "Project Management",
-        "Robotics",
-        "Security",
-        "Software Development",
-        "Startups",
-        "Web3",
-        "Web Development",
-    ]
-    # Search strings with the expected results
-    search_strings = [
-        ("ai", ["Artificial Intelligence (AI)", "Machine Learning", "GPT-3"]),
-        ("computer science", ["Software Development", "Open Source", "Low-Code"]),
-        ("business", ["Product Development", "Productivity", "Startups"]),
-        ("blockchain", ["Blockchain", "Decentralized Finance (DeFi)", "Cryptocurrency"]),
-        ("documentation", ["Documentation", "Project Management", "Product Development"]),
-        ("internet", ["Internet of Things (IoT)", "Web Development", "E-Commerce"]),
-        ("security", ["Security", "Cybersecurity", "Compliance"]),
-        ("finance", ["Fintech", "Cryptocurrency", "Decentralized Finance (DeFi)"]),
-        ("data", ["Data Science", "Machine Learning", "Analytics"]),
-        ("marketing", ["Marketing", "E-Commerce", "Startups"]),
-    ]
-    # Both good and bad instructions are included in this test
-    instructions = [
-        "Represent the text for classification",
-        "Embed this text",
-        "Generate a semantic representation of this text",
-        "Classify by category",
-        "Classify by tag",
-        "Classify by alphabetical order",
-        "Generate a nonsensical representation of this text",
-        "Disregard the semantics of this text",
-        "Treat this text as a random string of characters",
-        "This text is a shopping list",
-        "This text is a mathematical equation",
-        "This text is a song lyric",
-        "This text is a recipe",
-        "Randomize this text",
-        "Visualize this text as a landscape",
-    ]
-    test_multiple_instructions(instructions, result_strings, search_strings)
+    tags = load_object_data("tags")
+    result_strings = [tag['name'] for tag in tags]
+    searches = load_search_data("tags")
+    search_data = [(search['search'], search['expected']) for search in searches]
+    instructions = load_instructions("tags")
+    test_multiple_instructions(instructions, result_strings, search_data)
     log_header("End test: Tags")
 
 def test_tags_with_descriptions():
     # Test 1: Tags with descriptions
     # About half of the tags have descriptions
     log_header("Start test: Tags with descriptions")
-    test_strings = [
-        json.dumps({"name": "Analytics", "description": "Discovery, interpretation, and communication of meaningful patterns in data"}),
-        json.dumps({"name": "Artificial Intelligence (AI)"}),
-        json.dumps({"name": "Blockchain"}),
-        json.dumps({"name": "Compliance"}),
-        json.dumps({"name": "Cryptocurrency"}),
-        json.dumps({"name": "Cybersecurity"}),
-        json.dumps({"name": "Data Science"}),
-        json.dumps({"name": "Decentralized Finance (DeFi)", "description": "Financial services that are built on blockchain technology"}),
-        json.dumps({"name": "Documentation", "description": "Set of documents provided on paper, or online, or on digital or analog media"}),
-        json.dumps({"name": "E-Commerce"}),
-        json.dumps({"name": "Fintech"}),
-        json.dumps({"name": "Governance"}),
-        json.dumps({"name": "GPT-3"}),
-        json.dumps({"name": "Idea Generation"}),
-        json.dumps({"name": "Internet of Things (IoT)"}),
-        json.dumps({"name": "Low-Code"}),
-        json.dumps({"name": "Machine Learning", "description": "Application of artificial intelligence that provides systems the ability to learn and improve from experience"}),
-        json.dumps({"name": "Open Source", "description": "Software with source code that anyone can inspect, modify, and enhance"}),
-        json.dumps({"name": "Oracle", "description": "Service that provides external data to smart contracts on a blockchain"}),
-        json.dumps({"name": "Product Development", "description": "Process of creating a new product"}),
-        json.dumps({"name": "Productivity"}),
-        json.dumps({"name": "Project Management", "description": "The practice of initiating, planning, executing, controlling, and closing the work of a team to achieve specific goals"}),
-        json.dumps({"name": "Robotics"}),
-        json.dumps({"name": "Security", "description": "Securing data, transactions, and systems"}),
-        json.dumps({"name": "Software Development"}),
-        json.dumps({"name": "Startups"}),
-        json.dumps({"name": "Web3"}),
-        json.dumps({"name": "Web Development"}),
-    ]
-    search_strings = [
-        ("ai", ["Artificial Intelligence (AI)", "Machine Learning", "GPT-3"]),
-        ("computer science", ["Software Development", "Open Source", "Low-Code"]),
-        ("business", ["Product Development", "Productivity", "Startups"]),
-        ("blockchain", ["Blockchain", "Decentralized Finance (DeFi)", "Cryptocurrency"]),
-        ("documentation", ["Documentation", "Project Management", "Product Development"]),
-        ("internet", ["Internet of Things (IoT)", "Web Development", "E-Commerce"]),
-        ("security", ["Security", "Cybersecurity", "Compliance"]),
-        ("finance", ["Fintech", "Cryptocurrency", "Decentralized Finance (DeFi)"]),
-        ("data", ["Data Science", "Machine Learning", "Analytics"]),
-        ("marketing", ["Marketing", "E-Commerce", "Startups"]),
-    ]
-    instructions = [
-        "Represent the text for classification",
-        "Embed this text",
-        "Generate a semantic representation of this text",
-        "Classify by category",
-        "Classify by tag",
-        "Classify by alphabetical order",
-        "Generate a nonsensical representation of this text",
-        "Disregard the semantics of this text",
-        "Treat this text as a random string of characters",
-        "This text is a shopping list",
-        "This text is a mathematical equation",
-        "This text is a song lyric",
-        "This text is a recipe",
-        "Randomize this text",
-        "Visualize this text as a landscape",
-    ]
+    tags = load_object_data("tags")
+    test_strings = [json.dumps(tag) for tag in tags]
+    searches = load_search_data("tags")
+    search_data = [(search['search'], search['expected']) for search in searches]
+    instructions = load_instructions("tags")
     def parse_result(result):
         # Parse the JSON string and return the name field
         return json.loads(result)["name"]
-
-    test_multiple_instructions(instructions, test_strings, search_strings, parse_fn=parse_result)
+    test_multiple_instructions(instructions, test_strings, search_data, parse_fn=parse_result)
     log_header("End test: Tags with descriptions")
 
 
@@ -295,6 +209,7 @@ def test_4():
     log_header("End test 4")
 
 def main():
+    # Sleep 
     log_header("Starting Tests")
     test_tags()
     test_tags_with_descriptions()

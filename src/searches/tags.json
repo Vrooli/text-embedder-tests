@@ -1,0 +1,12 @@
+[
+    {"search": "ai", "expected": ["Artificial Intelligence (AI)", "Machine Learning", "GPT-3"]},
+    {"search": "computer science", "expected": ["Software Development", "Open Source", "Low-Code"]},
+    {"search": "business", "expected": ["Product Development", "Productivity", "Startups"]},
+    {"search": "blockchain", "expected": ["Blockchain", "Decentralized Finance (DeFi)", "Cryptocurrency"]},
+    {"search": "documentation", "expected": ["Documentation", "Project Management", "Product Development"]},
+    {"search": "internet", "expected": ["Internet of Things (IoT)", "Web Development", "E-Commerce"]},
+    {"search": "security", "expected": ["Security", "Cybersecurity", "Compliance"]},
+    {"search": "finance", "expected": ["Fintech", "Cryptocurrency", "Decentralized Finance (DeFi)"]},
+    {"search": "data", "expected": ["Data Science", "Machine Learning", "Analytics"]},
+    {"search": "marketing", "expected": ["Marketing", "E-Commerce", "Startups"]}
+]

@@ -1,0 +1,17 @@
+[
+    "Represent the text for classification",
+    "Embed this text",
+    "Generate a semantic representation of this text",
+    "Classify by category",
+    "Classify by tag",
+    "Classify by alphabetical order",
+    "Generate a nonsensical representation of this text",
+    "Disregard the semantics of this text",
+    "Treat this text as a random string of characters",
+    "This text is a shopping list",
+    "This text is a mathematical equation",
+    "This text is a song lyric",
+    "This text is a recipe",
+    "Randomize this text",
+    "Visualize this text as a landscape"
+]
