@@ -1,0 +1,17 @@
+[
+    {
+        "search": "security", 
+        "expected": ["CyberDefend", "Halcyon Dynamics"],
+        "negative": ["Cybersecurity Shield"]
+    },
+    {
+        "search": "ai", 
+        "expected": ["OpenAI", "SmartTech Innovations", "Zephyr Systems"],
+        "negative": ["AI Everywhere"]
+    },
+    {
+        "search": "iot", 
+        "expected": ["Polaris Networks"],
+        "negative": ["IoT Innovators"]
+    }
+]

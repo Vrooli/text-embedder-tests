@@ -1,0 +1,9 @@
+[
+    "Represent the text for classification, discounting repeated keywords",
+    "Embed this text, ignoring excessive repetitions of the same word",
+    "Generate a semantic representation of this text, minimizing the impact of keyword stuffing",
+    "Classify by category, considering unusual repetitions as noise",
+    "Classify by tag, ignoring potential gaming strategies such as keyword stuffing",
+    "Represent this text for classification, discounting overly frequent buzzwords",
+    "Embed this text, considering overly frequent words as less important"
+]
