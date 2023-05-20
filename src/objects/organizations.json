@@ -150,52 +150,52 @@
     },
     {
         "name": "AI Everywhere",
-        "bio": "AI AI AI AI AI AI AI AI. We love AI! Did we mention AI?",
+        "description": "AI AI AI AI AI AI AI AI. We love AI! Did we mention AI?",
         "tags": ["AI", "Machine Learning", "Big Data"]
     },
     {
         "name": "Blockchain Universe",
-        "bio": "Blockchain blockchain blockchain. All things blockchain. Blockchain is life.",
+        "description": "Blockchain blockchain blockchain. All things blockchain. Blockchain is life.",
         "tags": ["Blockchain", "Cryptocurrency", "Finance"]
     },
     {
         "name": "Quantum Pioneers",
-        "bio": "Quantum quantum quantum! We're all about quantum. Quantum is the future!",
+        "description": "Quantum quantum quantum! We're all about quantum. Quantum is the future!",
         "tags": ["Quantum Computing", "Innovation", "Technology"]
     },
     {
         "name": "Eco Warriors",
-        "bio": "Sustainability, green, renewable, carbon-neutral, eco-friendly, environment.",
+        "description": "Sustainability, green, renewable, carbon-neutral, eco-friendly, environment.",
         "tags": ["Sustainability", "Renewable Energy", "Climate Change"]
     },
     {
         "name": "FinTech Titans",
-        "bio": "Fintech fintech fintech fintech. We're fintech. Fintech!",
+        "description": "Fintech fintech fintech fintech. We're fintech. Fintech!",
         "tags": ["Fintech", "Finance", "Technology"]
     },
     {
         "name": "Cybersecurity Shield",
-        "bio": "Cybersecurity cybersecurity cybersecurity. Keeping you safe, one cybersecurity at a time.",
+        "description": "Cybersecurity cybersecurity cybersecurity. Keeping you safe, one cybersecurity at a time.",
         "tags": ["Cybersecurity", "Information Security", "Privacy"]
     },
     {
         "name": "HealthTech Heroes",
-        "bio": "Healthtech healthtech healthtech. Your health, our tech. Healthtech!",
+        "description": "Healthtech healthtech healthtech. Your health, our tech. Healthtech!",
         "tags": ["Healthtech", "Medical Technology", "Healthcare"]
     },
     {
         "name": "Crypto Kings",
-        "bio": "Cryptocurrency cryptocurrency cryptocurrency. We're all about the crypto. Crypto!",
+        "description": "Cryptocurrency cryptocurrency cryptocurrency. We're all about the crypto. Crypto!",
         "tags": ["Cryptocurrency", "Finance", "Blockchain"]
     },
     {
         "name": "Data Science Dynamos",
-        "bio": "Data data data. We love data. Data science rules!",
+        "description": "Data data data. We love data. Data science rules!",
         "tags": ["Data Science", "Big Data", "Analytics"]
     },
     {
         "name": "IoT Innovators",
-        "bio": "IoT IoT IoT. We're all about IoT. Connectivity is key!",
+        "description": "IoT IoT IoT. We're all about IoT. Connectivity is key!",
         "tags": ["IoT", "Connectivity", "Technology"]
     }
 ]

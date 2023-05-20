@@ -6,8 +6,11 @@ from sklearn.neighbors import NearestNeighbors
 import json
 import logging
 import os
+import re
+import regex
+from unicodedata import normalize
 
-EMBEDDING_API_URL = 'http://localhost:3369' #'http://embedtext.com'
+EMBEDDING_API_URL = 'https://embedtext.com' #'http://localhost:3369' #'http://embedtext.com'
 # Maximum number of sentences that can be processed at once. Should match the value in the embedding API.
 MAX_SENTENCES = 100
 
@@ -34,13 +37,41 @@ def load_file(filepath: str):
         return None
 
 def load_object_data(filename: str):
-    return load_file(f'objects/{filename}.json')
+    data = load_file(f'objects/{filename}.json')
+    if not data:
+        logger.error(f"Could not load object data from {filename}.")
+        return []
+    return data
     
 def load_search_data(filename: str):
-    return load_file(f'searches/{filename}.json')
+    data = load_file(f'searches/{filename}.json')
+    if not data:
+        logger.error(f"Could not load search data from {filename}.")
+        return []
+    return data
     
 def load_instructions(filename: str):
-    return load_file(f'instructions/{filename}.json')
+    data = load_file(f'instructions/{filename}.json')
+    if not data:
+        logger.error(f"Could not load instructions from {filename}.")
+        return []
+    return data
+
+def clean_string(input: str, lang='en'):
+    # Remove extra spaces and newlines
+    input = re.sub('\s+', ' ', input.strip())
+    # Lowercase and limit unicode range
+    input = normalize('NFKD', input.lower()).encode('ASCII', 'ignore').decode('ASCII')
+    # Remove stop words, and any punctuation that appears between a space and a letter
+    if lang == 'en':
+        input = regex.sub(r'[\p{P}\p{S}](?!\p{L})|(?<!\p{L})[\p{P}\p{S}]', '', input)
+        input = re.sub(r'\b(a|an|and|are|as|at|be|by|for|from|has|he|in|is|it|its|of|on|that|the|to|was|were|will|with)\b', '', input)
+    # Remove duplicate words
+    input = ' '.join(dict.fromkeys(input.split()))
+    # Limit length to 128 characters
+    input = input[:128]
+    logger.debug(f'Cleaned string: {input}')
+    return input
 
 # Uses the embedding API to get the embeddings of the instruction and the sentences in the list
 # Returns None if there is an error
@@ -180,24 +211,91 @@ def test_tags_with_descriptions():
     test_multiple_instructions(instructions, test_strings, search_data, True, parse_fn=parse_result)
     log_header("End test: Tags with descriptions")
 
+def test_tags_with_descriptions_lowercase():
+    log_header("Start test: Tags with descriptions, all lowercased")
+    tags = load_object_data("tags")
+    # Lowercase tags
+    for tag in tags:
+        if "description" in tag and tag["description"] is not None:
+            tag["description"] = tag["description"].lower()
+        tag["name"] = tag["name"].lower()
+    test_strings = [json.dumps(tag) for tag in tags]
+    searches = load_search_data("tags")
+    # Lowercase each string in each search's expected array
+    for search in searches:
+        search["expected"] = [exp.lower() for exp in search["expected"]]
+    search_data = [(search['search'], search['expected']) for search in searches]
+    instructions = load_instructions("classify")
+    def parse_result(result):
+        # Parse the JSON string and return the name field
+        return json.loads(result)["name"]
+    test_multiple_instructions(instructions, test_strings, search_data, True, parse_fn=parse_result)
+    log_header("End test: Tags with descriptions, all lowercased")
+
+def test_tags_with_descriptions_cleaned():
+    log_header("Start test: Tags with descriptions, cleaned")
+    tags = load_object_data("tags")
+    # Lowercase tags
+    for tag in tags:
+        if "description" in tag and tag["description"] is not None:
+            tag["description"] = clean_string(tag["description"])
+        tag["name"] = clean_string(tag["name"])
+    test_strings = [json.dumps(tag) for tag in tags]
+    searches = load_search_data("tags")
+    # Lowercase each string in each search's expected array
+    for search in searches:
+        search["expected"] = [clean_string(exp) for exp in search["expected"]]
+    search_data = [(search['search'], search['expected']) for search in searches]
+    instructions = load_instructions("classify")
+    def parse_result(result):
+        # Parse the JSON string and return the name field
+        return json.loads(result)["name"]
+    test_multiple_instructions(instructions, test_strings, search_data, True, parse_fn=parse_result)
+    log_header("End test: Tags with descriptions, cleaned")
+
 def test_organizations():
     log_header("Start test: Organizations")
     organizations = load_object_data("organizations")
     test_strings = [json.dumps(org) for org in organizations]
     searches = load_search_data("organizations")
     search_data = [(search['search'], search['expected']) for search in searches]
-    instructions = load_instructions("classifyWithDeboost")
+    instructions = load_instructions("classify")
     def parse_result(result):
         # Parse the JSON string and return the name field
         return json.loads(result)["name"]
     test_multiple_instructions(instructions, test_strings, search_data, True, parse_fn=parse_result)
     log_header("End test: Organizations")
 
+def test_organizations_cleaned():
+    log_header("Start test: Organizations, cleaned")
+    organizations = load_object_data("organizations")
+    for org in organizations:
+        org["name"] = clean_string(org["name"])
+        if "description" in org and org["description"] is not None:
+            org["description"] = clean_string(org["description"])
+        if "tag" in org and org["tag"] is not None:
+            org["tags"] = [clean_string(tag) for tag in org["tags"]]
+    test_strings = [json.dumps(org) for org in organizations]
+    searches = load_search_data("organizations")
+    # Lowercase each string in each search's expected array
+    for search in searches:
+        search["expected"] = [clean_string(exp) for exp in search["expected"]]
+    search_data = [(search['search'], search['expected']) for search in searches]
+    instructions = load_instructions("classify")
+    def parse_result(result):
+        # Parse the JSON string and return the name field
+        return json.loads(result)["name"]
+    test_multiple_instructions(instructions, test_strings, search_data, True, parse_fn=parse_result)
+    log_header("End test: Organizations, cleaned")
+
 def main():
     log_header("Starting Tests")
     test_tags()
-    test_tags_with_descriptions()
+    test_tags_with_descriptions() # Better than just tags
+    test_tags_with_descriptions_lowercase() # Slightly better than tags with descriptions
+    test_tags_with_descriptions_cleaned() # Slightly better than tags with descriptions lowercase, if joined with commas
     test_organizations()
+    test_organizations_cleaned() # Worse than organizations. Less worse if joined by spaces instead of commas
     log_header("Finished Tests")
 
 try:
